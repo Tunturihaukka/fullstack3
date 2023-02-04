@@ -2,6 +2,7 @@ const express = require('express')
 const morgan = require('morgan')
 const app = express()
 const path = require('path');
+const cors = require('cors')
 
     let persons = [
       {
@@ -31,9 +32,11 @@ const path = require('path');
       }
     ]
     app.use(express.json())
+    app.use(cors())
 
     
-    /* Explicit implementation */
+    /* Explicit implementation of morgan with logging of
+    body of a POST request */
     app.use(morgan(function (tokens, req, res) {
         const person = req.body
         const info = [
@@ -117,7 +120,7 @@ const path = require('path');
         )
     })
 
-
-const PORT = 3001
+/* Using port defined in env variable, and if not available, then 3001 */
+const PORT = process.env.PORT || 3001
 app.listen(PORT)
 console.log(`Server running on port ${PORT}`)
