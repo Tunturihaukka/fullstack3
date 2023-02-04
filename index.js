@@ -29,6 +29,45 @@ const path = require('path');
         id: 5
       }
     ]
+    app.use(express.json())
+
+    const randomInt = (minimum, maximum) => {
+        min = Math.ceil(minimum)
+        max = Math.floor(maximum)
+        return Math.floor(Math.random() * (max - min) + min)
+    }
+
+    const generateId = () => {
+        const newId = randomInt(1, 1000000)
+        return newId
+    }
+
+
+    app.post('/api/persons', (req, res) => {
+        const person = req.body
+
+        if (!person.name) {
+            return res.status(400).json({ 
+              error: 'name missing' 
+            })
+        } else if (!person.number) {
+            return res.status(400).json({ 
+                error: 'number missing' 
+              })
+        } else if (persons.some(p => p.name === person.name)) {
+            return res.status(400).json({ 
+                error: 'name must be unique' 
+              })
+        }
+
+        const newperson = {
+            name: person.name,
+            number: person.number,
+            id: generateId()
+        }
+        persons = persons.concat(newperson)
+        res.json(person)
+      })
 
     app.delete('/api/persons/:id', (req, res) => {
         const id = Number(req.params.id)
