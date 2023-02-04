@@ -34,6 +34,9 @@ const cors = require('cors')
     app.use(express.json())
     app.use(cors())
 
+    /* To host the frontend using build file created with npm */
+    app.use(express.static('build'))
+
     
     /* Explicit implementation of morgan with logging of
     body of a POST request */
