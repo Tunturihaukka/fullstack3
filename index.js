@@ -1,4 +1,5 @@
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
 const path = require('path');
 
@@ -30,6 +31,25 @@ const path = require('path');
       }
     ]
     app.use(express.json())
+
+    
+    /* Explicit implementation */
+    app.use(morgan(function (tokens, req, res) {
+        const person = req.body
+        const info = [
+            tokens.method(req, res),
+            tokens.url(req, res),
+            tokens.status(req, res),
+            tokens.res(req, res, 'content-length'), '-',
+            tokens['response-time'](req, res), 'ms'
+          ]
+        if (([tokens.method(req, res)][0] === 'POST')) {
+            const postinfo = info.concat(JSON.stringify(person))
+            return postinfo.join(' ')
+        }
+        return info.join(' ')
+      })
+    )
 
     const randomInt = (minimum, maximum) => {
         min = Math.ceil(minimum)
