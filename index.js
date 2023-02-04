@@ -122,5 +122,6 @@ const cors = require('cors')
 
 /* Using port defined in env variable, and if not available, then 3001 */
 const PORT = process.env.PORT || 3001
-app.listen(PORT)
-console.log(`Server running on port ${PORT}`)
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})
