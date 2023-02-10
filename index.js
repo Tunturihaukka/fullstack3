@@ -32,6 +32,7 @@ const cors = require('cors')
       }
     ]
     app.use(express.json())
+    /* Universal allowance at the moment */
     app.use(cors())
 
     /* To host the frontend using build file created with npm */
