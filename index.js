@@ -4,33 +4,11 @@ const app = express()
 const path = require('path');
 const cors = require('cors')
 
-    let persons = [
-      {
-        name: "Julius Caesar",
-        number: "23429382-253235",
-        id: 1
-      },
-      {
-        name: "Trajanus",
-        number: "21212-121212",
-        id: 2
-      },
-      {
-        name: "Kleopatra",
-        number: "23323-4224",
-        id: 3
-      },
-      {
-        name: "Tullia",
-        number: "2323-242323",
-        id: 4
-      },
-      {
-        name: "Vergilius",
-        number: "23232-000001",
-        id: 5
-      }
+const Person = require('./modules/person')
+
+  let persons = [
     ]
+
     app.use(express.json())
     /* Universal allowance at the moment */
     app.use(cors())
@@ -58,71 +36,95 @@ const cors = require('cors')
       })
     )
 
-    const randomInt = (minimum, maximum) => {
-        min = Math.ceil(minimum)
-        max = Math.floor(maximum)
-        return Math.floor(Math.random() * (max - min) + min)
-    }
-
-    const generateId = () => {
-        const newId = randomInt(1, 1000000)
-        return newId
-    }
-
+    app.put('/api/persons/:id', (req, res, next) => {
+      const body = req.body
+    
+      /* Must give normal Javascript object, not Person object */
+      const person = {
+        name: body.name,
+        number: body.number
+      }
+    
+      Person.findByIdAndUpdate(req.params.id, person, { new: true })
+        .then(updatedPerson => {
+          res.json(updatedPerson)
+        })
+        .catch(error => next(error))
+    })
 
     app.post('/api/persons', (req, res) => {
         const person = req.body
+        const personDB = new Person({
+          name: person.name,
+          number: person.number
+      })
 
-        if (!person.name) {
-            return res.status(400).json({ 
-              error: 'name missing' 
-            })
-        } else if (!person.number) {
-            return res.status(400).json({ 
-                error: 'number missing' 
-              })
-        } else if (persons.some(p => p.name === person.name)) {
-            return res.status(400).json({ 
-                error: 'name must be unique' 
-              })
-        }
 
-        const newperson = {
-            name: person.name,
-            number: person.number,
-            id: generateId()
-        }
-        persons = persons.concat(newperson)
+      personDB.save().then(result => {
+        console.log(`added ${result.name} number ${result.number} to phonebook`)
+      })
         res.json(person)
       })
 
-    app.delete('/api/persons/:id', (req, res) => {
-        const id = Number(req.params.id)
-        persons = persons.filter(person => person.id !== id)
-      
-        res.status(204).end()
+    app.delete('/api/persons/:id', (req, res, next) => {
+      Person.findByIdAndRemove(req.params.id)
+        .then(result => {
+          if (result) {
+            res.status(204).end()
+          }
+          console.log('Person was already removed')
+          res.status(500).end()
+        })
+        .catch(error => next(error))
       })
       
     app.get('/api/persons', (req, res) => {
-        res.json(persons)
+      Person.find({}).then(result => {
+        res.json(result)
+        
+      })
     })
 
-    app.get('/api/persons/:id', (req, res) => {
-        const id = Number(req.params.id)
-        const person = persons.find(person => person.id === id)
-        if (person) {
+    app.get('/api/persons/:id', (req, res, next) => {
+        Person.findById(req.params.id)
+        .then(person => {
+          if (person) {
             res.json(person)
           } else {
             res.status(404).end()
           }
+        })
+        .catch(error => {
+          next(error)
+        })
     })
 
     app.get('/info', (req, res) => {
+      Person.find({}).then(result => {
         res.send(
-            `Phonebook has info for ${persons.length} people`
+            `Phonebook has info for ${result.length} people`
             + `<br><br/>` + `${Date()}`
         )
+      })
     })
+    
+  const unknownEndpoint = (request, response) => {
+    console.log('Unknown endpoint')
+    response.status(404).end()
+  }
+  app.use(unknownEndpoint)
+  
+  const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+      console.log('Malformatted id')
+      return response.status(400).end()
+    }
+
+    next(error)
+  }
+  app.use(errorHandler)
 
 /* Using port defined in env variable, and if not available, then 3001 */
 const PORT = process.env.PORT || 3001
