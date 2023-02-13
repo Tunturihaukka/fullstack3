@@ -38,33 +38,38 @@ const Person = require('./modules/person')
 
     app.put('/api/persons/:id', (req, res, next) => {
       const body = req.body
-    
-      /* Must give normal Javascript object, not Person object */
+      /*
+      const validated = new Person({
+        name: person.name,
+        number: person.number
+      })
+      //validated.validate().catch(error => next(error))
+
+       Must give normal Javascript object, not Person object */
       const person = {
         name: body.name,
         number: body.number
       }
-    
-      Person.findByIdAndUpdate(req.params.id, person, { new: true })
+
+      const opts = { runValidators: true };
+      Person.findByIdAndUpdate(req.params.id, person, {new: true})
         .then(updatedPerson => {
           res.json(updatedPerson)
         })
-        .catch(error => next(error))
+        .catch(error =>  next(error))
     })
 
-    app.post('/api/persons', (req, res) => {
-        const person = req.body
-        const personDB = new Person({
+    app.post('/api/persons', (req, res, next) => {
+      const person = req.body
+      const personDB = new Person({
           name: person.name,
           number: person.number
       })
-
-
       personDB.save().then(result => {
         console.log(`added ${result.name} number ${result.number} to phonebook`)
-      })
         res.json(person)
-      })
+      }).catch(error => next(error))
+    })
 
     app.delete('/api/persons/:id', (req, res, next) => {
       Person.findByIdAndRemove(req.params.id)
@@ -72,7 +77,6 @@ const Person = require('./modules/person')
           if (result) {
             res.status(204).end()
           }
-          console.log('Person was already removed')
           res.status(500).end()
         })
         .catch(error => next(error))
@@ -120,6 +124,8 @@ const Person = require('./modules/person')
     if (error.name === 'CastError') {
       console.log('Malformatted id')
       return response.status(400).end()
+    } else if (error.name === 'ValidationError') {
+      return response.status(400).json({ error: error.message })
     }
 
     next(error)
